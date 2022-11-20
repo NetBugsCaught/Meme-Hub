@@ -1,0 +1,155 @@
+local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/MaterialLua/master/Module.lua"))()
+
+
+local Players = game:GetService('Players')
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character
+local HumanoidRootPart = Character:WaitForChild('HumanoidRootPart')
+local TycoonFolder = workspace.Tycoons
+local autoFarmToggle = false
+
+function GetTycoon(player)
+    for _, tycoon in pairs(TycoonFolder:GetChildren()) do
+        local TycoonOwner = tycoon:FindFirstChild('TycoonOwner')
+        
+        if not TycoonOwner then continue end
+        if TycoonOwner.Value == player.Name then return tycoon end
+    end
+    
+    return false
+end
+
+
+function FindClassInInstance(instance, class)
+    for _, child in pairs(instance:GetDescendants()) do
+        if child.ClassName == class then return child end
+    end
+end
+
+
+function getOwnedHouse() 
+	for i,Tycoon in pairs(game:GetService("Workspace").Tycoons:GetChildren()) do
+		if string.sub(Tycoon.Name,1,string.len("Tycoon")) == "Tycoon" then 
+			if Tycoon.TycoonOwner.Value == game.Players.LocalPlayer.Name then
+				OwnedHouse = Tycoon
+			else
+			end
+		end
+	end
+end
+
+getOwnedHouse()
+
+function antiAFK()
+    game:GetService("Players").LocalPlayer.Idled:connect(function()
+        game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame) wait(1) game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    end)
+end
+
+function collectAll()
+    if OwnedHouse ~= nil then
+        for i,v in pairs(OwnedHouse.StaticItems:GetChildren()) do
+			if string.sub(v.Name,1,4) == "Belt" then
+			    wait(3)
+				fireproximityprompt(v.Collect.CollectPart.ProximityPrompt)
+				HumanoidRootPart.CFrame = v.Collect.CollectPart.CFrame
+			end
+		end
+    end
+end
+
+
+function FindClassInInstance(instance, class)
+    for _, child in pairs(instance:GetDescendants()) do
+        if child.ClassName == class then return child end
+    end
+end
+
+function WakeAll(tycoon)
+    local orginalPosition = HumanoidRootPart.CFrame
+    local droppers = tycoon:WaitForChild('Items')
+    local wakeCount = 0
+    
+    for _, dropper in pairs(droppers:GetChildren()) do
+        local sleeping = dropper:WaitForChild('Sleeping')
+        
+        -- Checks --
+        if not sleeping.Value then continue end
+        
+        -- Teleport/Click --
+        local proximityPrompt = FindClassInInstance(dropper, 'ProximityPrompt')
+        local torso = dropper:WaitForChild('Noob'):WaitForChild('Torso')
+        
+        HumanoidRootPart.CFrame = torso.CFrame
+        fireproximityprompt(proximityPrompt); repeat wait() until sleeping.Value == false
+        wakeCount = wakeCount + 1
+    end
+    
+    HumanoidRootPart.CFrame = orginalPosition
+    print(('Awaked %i chinese workers'):format(wakeCount))
+end
+
+-- Main --
+local player = Players:WaitForChild('RoughHalo')
+local currentTycoon = GetTycoon(player) -- you can change to "GetTycoon(LocalPlayer)"
+
+function sell()
+	game:GetService("ReplicatedStorage").Events.UploadCurrentMemes:FireServer()
+end
+
+function upload()
+    game:GetService("ReplicatedStorage").Events.MemeToStorage:FireServer()
+end
+
+
+
+function autoFarm()
+    while wait() do
+        spawn(function()
+            WakeAll(currentTycoon)
+            end)
+        spawn(function()
+            collectAll()
+            end)
+        spawn(function()
+            upload()
+            end)
+        spawn(function()
+            sell()
+        end)
+        spawn(function()
+            antiAFK()
+            end)
+    end
+end
+
+
+
+local UI = Material.Load({
+    Title = "",
+    Style = 3,
+    SizeX = 400,
+    SizeY = 100,
+    Theme = "Dark"
+})
+
+local Page = UI.New({
+   Title = "Main"
+})
+
+
+
+Page.Button({
+    Text = "Auto Farm",
+    Callback = function()
+        autoFarm()
+        print("Anti Afk On")    
+    end
+    })
+
+
+
+
+
+
